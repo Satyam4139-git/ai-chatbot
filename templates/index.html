@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Chatbot</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+        body {
+            background: linear-gradient(
+                135deg, #667eea, #764ba2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .chat-container {
+            width: 450px;
+            height: 600px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px 
+                rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .chat-header {
+            background: linear-gradient(
+                135deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .bot-avatar { font-size: 35px; }
+        .header-info h3 { font-size: 18px; }
+        .status { 
+            font-size: 12px; 
+            color: #90EE90; 
+        }
+        .clear-btn {
+            margin-left: auto;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background: #f5f5f5;
+        }
+        .message {
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+        }
+        .avatar { font-size: 25px; }
+        .message-content {
+            max-width: 75%;
+            padding: 12px 15px;
+            border-radius: 18px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .bot-message .message-content {
+            background: white;
+            color: #333;
+            box-shadow: 0 2px 5px 
+                rgba(0,0,0,0.1);
+        }
+        .user-message {
+            flex-direction: row-reverse;
+        }
+        .user-message .message-content {
+            background: linear-gradient(
+                135deg, #667eea, #764ba2);
+            color: white;
+        }
+        .chat-input-container {
+            padding: 15px;
+            background: white;
+            display: flex;
+            gap: 10px;
+            border-top: 1px solid #eee;
+        }
+        .chat-input-container input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            outline: none;
+            font-size: 14px;
+        }
+        .chat-input-container input:focus {
+            border-color: #667eea;
+        }
+        .send-btn {
+            background: linear-gradient(
+                135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+<div class="chat-container">
+
+    <div class="chat-header">
+        <div class="bot-avatar">🤖</div>
+        <div class="header-info">
+            <h3>AI Assistant</h3>
+            <span class="status">● Online</span>
+        </div>
+        <button onclick="clearChat()" 
+                class="clear-btn">
+            Clear Chat
+        </button>
+    </div>
+
+    <div class="chat-messages" 
+         id="chatMessages">
+        <div class="message bot-message">
+            <span class="avatar">🤖</span>
+            <div class="message-content">
+                Hello! I am your AI Assistant.
+                How can I help you today? 😊
+            </div>
+        </div>
+    </div>
+
+    <div class="chat-input-container">
+        <input type="text" 
+               id="userInput"
+               placeholder="Type message here..."
+               onkeypress="handleKeyPress(event)"
+        />
+        <button onclick="sendMessage()" 
+                class="send-btn">
+            Send ➤
+        </button>
+    </div>
+</div>
+
+<script>
+async function sendMessage() {
+    const input = document.getElementById(
+        'userInput');
+    const message = input.value.trim();
+    if (!message) return;
+    addMessage(message, 'user');
+    input.value = '';
+    
+    try {
+        const response = await fetch('/chat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                message: message
+            })
+        });
+        const data = await response.json();
+        if (data.status === 'success') {
+            addMessage(data.response, 'bot');
+        } else {
+            addMessage('Error: ' + data.error, 
+                      'bot');
+        }
+    } catch (error) {
+        addMessage('Connection error!', 'bot');
+    }
+}
+
+function addMessage(text, sender) {
+    const chatMessages = 
+        document.getElementById('chatMessages');
+    const messageDiv = 
+        document.createElement('div');
+    messageDiv.classList.add('message');
+    
+    if (sender === 'user') {
+        messageDiv.classList.add('user-message');
+        messageDiv.innerHTML = `
+            <div class="message-content">
+                ${text}
+            </div>
+            <span class="avatar">👤</span>
+        `;
+    } else {
+        messageDiv.classList.add('bot-message');
+        messageDiv.innerHTML = `
+            <span class="avatar">🤖</span>
+            <div class="message-content">
+                ${text}
+            </div>
+        `;
+    }
+    chatMessages.appendChild(messageDiv);
+    chatMessages.scrollTop = 
+        chatMessages.scrollHeight;
+}
+
+function handleKeyPress(event) {
+    if (event.key === 'Enter') {
+        sendMessage();
+    }
+}
+
+async function clearChat() {
+    await fetch('/clear', { method: 'POST' });
+    document.getElementById(
+        'chatMessages').innerHTML = `
+        <div class="message bot-message">
+            <span class="avatar">🤖</span>
+            <div class="message-content">
+                Chat cleared! How can I help? 😊
+            </div>
+        </div>
+    `;
+}
+</script>
+</body>
+</html>
