@@ -1,11 +1,11 @@
-from flask import (Flask, 
-                   render_template, 
-                   request, 
+from flask import (Flask,
+                   render_template,
+                   request,
                    jsonify)
-from chatbot import (get_chatbot_response, 
+from chatbot import (get_chatbot_response,
                      clear_history)
+import os
 
-# Initialize Flask app
 app = Flask(__name__)
 
 @app.route("/")
@@ -17,21 +17,21 @@ def chat():
     try:
         data = request.get_json()
         user_message = data.get("message", "")
-        
+
         if not user_message:
             return jsonify({
                 "error": "No message provided"
             }), 400
-        
+
         bot_response = get_chatbot_response(
             user_message
         )
-        
+
         return jsonify({
             "response": bot_response,
             "status": "success"
         })
-    
+
     except Exception as e:
         return jsonify({
             "error": str(e),
@@ -44,4 +44,7 @@ def clear():
     return jsonify({"message": message})
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    port = int(os.environ.get("PORT", 10000))
+    app.run(debug=False,
+            host="0.0.0.0",
+            port=port)
